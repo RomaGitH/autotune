@@ -5,16 +5,11 @@
 function y = pitchCorrection(x, prev1, prev2)
   if (x == 0)
     y=0;  # Caso x = 0;
-  elseif (abs(x-prev2) > prev1&& prev1*prev2 > 0)
+  elseif (abs(x-prev1) > prev1+100 && prev1 > 0)
     y = prev1;  # Intento de corregir phonemas sordos
     ## no funciona
   else
     piano_notes_freq = [
-      % Octave 3
-      65.406,  % C3
-      69.296,  % C#3/Db3
-      73.416,  % D3
-      77.782,  % D#3/Eb3
       82.407,  % E3
       87.307,  % F3
       92.499,  % F#3/Gb3

@@ -19,32 +19,19 @@ windows = zeros(window_lenght,windows_number); #inicializo el vector de m ventan
 pitch = []; #vector del pitch detectado de cada ventana
 
 windows(:,1) = song(1:window_lenght).*hanning_window;
-m = zeros(1024,1024);
-
-[pitch1, matrix0, no_matrix0] = yin(windows(:,1), window_lenght, 1, fm, 60, 1000, m, 1);
-
-pitch = [pitch pitch1];
-
+pitch = [pitch yin(windows(:,1), window_lenght, fm)];
 for i=2:windows_number
   ##console
   display(['window n°: ', num2str(i),'/', num2str(windows_number)]);
 
   ## defino intervalo y multiplico por la ventana
   windows(:,i) = song(1+((i-1)*step):(window_lenght+((i-1)*step))).*hanning_window;
-  # busca mediante yin la f0, 60 y 1000 son el min_lag y max_lag de la autocorrelacion
-  # creo que se puede cantar entre 80hz y 1000hz
-
-  f0 = yin(windows(:,2), window_lenght, fm); %, ((i-1)*step)+ 1, 60, 1000, matrix0, no_matrix0);
+  f0 = yin(windows(:,i), window_lenght, fm,windows(:,i-1));
   pitch = [pitch f0];
-  no_matrix0 = no_matrix;
-  matrix0 = matrix;
-  #console
-  clc;
 endfor
 
-##plot(pitch);
 
-## Calculo vector de pitch corregidos.
+## Calculo vector de pitch corregidos. no arregla sordos ni tampoco funciona...
 corrected = [];
 corrected = [corrected pitchCorrection(pitch(1),inf,inf)]; #inicializo 2 valores.
 corrected = [corrected pitchCorrection(pitch(2),inf,inf)];
@@ -57,41 +44,51 @@ endfor
 display('Terminado');
 display(['Tiempo transcurrido: ', num2str(toc()), 's']);
 
+subplot(3,1,1);
+plot(pitch);
+subplot(3,1,2);
+plot(corrected);
+subplot(3,1,3);
+plot(pitch);
+hold on;
+plot(corrected);
+hold off;
 
-##PSOLA ?? no anda
-p1nfm = 0;
-p2nfm = 0;
-new_song = zeros(1,2*song_lenght);
-for(i=1:windows_number-2)
-  display(['window n°: ', num2str(i),'/', num2str(windows_number)]);
-
-  nfm = (corrected(i)*fm)/pitch(i);
-
-  if(i>2)
-    if(nfm > p2nfm + p1nfm)
-      nfm = p1nfm;
-    endif
-  endif
-
-  p2nfm = p1nfm;
-  p1nfm = nfm;
-
-  paso = (i-1)*step;
-  if (pitch(i) == 0)
-    for(j=1:window_lenght)
-      new_song(1+paso+(2*(j-1))) += windows(j,i);
-    endfor
-  else
-    for(j=1:window_lenght)
-    new_song(round(1+paso+(2*(j-1)*(1/(nfm/fm))))) += windows(j,i);
-    endfor
-  endif
-endfor
-
-audiowrite('test.wav',new_song,fm);
-
-
-
-
-
+##
+####PSOLA ?? no anda
+##p1nfm = 0;
+##p2nfm = 0;
+##new_song = zeros(1,2*song_lenght);
+##for(i=1:windows_number-2)
+##  display(['window n°: ', num2str(i),'/', num2str(windows_number)]);
+##
+##  nfm = (corrected(i)*fm)/pitch(i);
+##
+##  if(i>2)
+##    if(nfm > p2nfm + p1nfm)
+##      nfm = p1nfm;
+##    endif
+##  endif
+##
+##  p2nfm = p1nfm;
+##  p1nfm = nfm;
+##
+##  paso = (i-1)*step;
+##  if (pitch(i) == 0)
+##    for(j=1:window_lenght)
+##      new_song(1+paso+(2*(j-1))) += windows(j,i);
+##    endfor
+##  else
+##    for(j=1:window_lenght)
+##    new_song(round(1+paso+(2*(j-1)*(1/(nfm/fm))))) += windows(j,i);
+##    endfor
+##  endif
+##endfor
+##
+##audiowrite('test.wav',new_song,fm*2);
+##
+##
+##
+##
+##
 
