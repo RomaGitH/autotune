@@ -1,9 +1,10 @@
+pkg load signal;
 tic();
 #### Lectura
 #### Distintos audios en samples/
 ##[song, fm] = audioread("samples/opera-vocals_129bpm_F_minor.wav");
-##[song, fm] = audioread("samples/middle-east-girl_120bpm_C_minor.wav");
-[song, fm] = audioread("samples/grim-reaper.wav");
+[song, fm] = audioread("samples/middle-east-girl_120bpm_C_minor.wav");
+##[song, fm] = audioread("samples/grim-reaper.wav");
 
 song_lenght= length(song);
 t = 0:1/fm: song_lenght - 1/fm;
@@ -26,7 +27,7 @@ for i=2:windows_number
 
   ## defino intervalo y multiplico por la ventana
   windows(:,i) = song(1+((i-1)*step):(window_lenght+((i-1)*step))).*hanning_window;
-  f0 = yin(windows(:,i), window_lenght, fm,windows(:,i-1));
+  f0 = yin(windows(:,i), window_lenght, fm, windows(:,i-1)); #yin (recibe dos ventanas) no mejora nada...
   pitch = [pitch f0];
 endfor
 
@@ -40,10 +41,12 @@ for i=3:windows_number
   corrected = [corrected pitchCorrection(pitch(i),corrected(end),corrected(end-1))];
 endfor
 
-##console
+##Console.
 display('Terminado');
 display(['Tiempo transcurrido: ', num2str(toc()), 's']);
 
+#Plot de el pitch detectado y el corregido.
+figure(2);
 subplot(3,1,1);
 plot(pitch);
 subplot(3,1,2);
