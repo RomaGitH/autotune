@@ -21,7 +21,7 @@ pitch = []; #vector del pitch detectado de cada ventana
 windows(:,1) = song(1:window_lenght).*hanning_window;
 m = zeros(1024,1024);
 
-[pitch1, matrix0, no_matrix0] = yin(song, window_lenght, 1, fm, 60, 1000, m, 1);
+[pitch1, matrix0, no_matrix0] = yin(windows(:,1), window_lenght, 1, fm, 60, 1000, m, 1);
 
 pitch = [pitch pitch1];
 
@@ -34,7 +34,7 @@ for i=2:windows_number
   # busca mediante yin la f0, 60 y 1000 son el min_lag y max_lag de la autocorrelacion
   # creo que se puede cantar entre 80hz y 1000hz
 
-  [f0, matrix, no_matrix] = yin(song, window_lenght, ((i-1)*step)+ 1, fm, 60, 1000, matrix0, no_matrix0);
+  f0 = yin(windows(:,2), window_lenght, fm); %, ((i-1)*step)+ 1, 60, 1000, matrix0, no_matrix0);
   pitch = [pitch f0];
   no_matrix0 = no_matrix;
   matrix0 = matrix;
