@@ -1,12 +1,11 @@
-pkg load signal;
-#### Lectura
-##[song, fm] = audioread("samples/opera-vocals_129bpm_F_minor.wav");
 tic();
+#### Lectura
+#### Distintos audios en samples/
+##[song, fm] = audioread("samples/opera-vocals_129bpm_F_minor.wav");
 ##[song, fm] = audioread("samples/middle-east-girl_120bpm_C_minor.wav");
 [song, fm] = audioread("samples/grim-reaper.wav");
 
 song_lenght= length(song);
-
 t = 0:1/fm: song_lenght - 1/fm;
 
 #### Pitch detection algorithm
@@ -16,35 +15,55 @@ window_lenght = 1024;
 step = 512;
 windows_number = ceil(((song_lenght - window_lenght)/step)+1);
 hanning_window = hanning(1024)';
-windows = zeros(window_lenght,windows_number);
-pitch = [];
-db = 0; #debug
+windows = zeros(window_lenght,windows_number); #inicializo el vector de m ventanas de n tamaño
+pitch = []; #vector del pitch detectado de cada ventana
 
-for i=1:windows_number
-  display(['window n°: ', num2str(i),'/', num2str(window_number)]);
+windows(:,1) = song(1:window_lenght).*hanning_window;
+m = zeros(1024,1024);
+
+[pitch1, matrix0, no_matrix0] = yin(song, window_lenght, 1, fm, 60, 1000, m, 1);
+
+pitch = [pitch pitch1];
+
+for i=2:windows_number
+  ##console
+  display(['window n°: ', num2str(i),'/', num2str(windows_number)]);
+
+  ## defino intervalo y multiplico por la ventana
   windows(:,i) = song(1+((i-1)*step):(window_lenght+((i-1)*step))).*hanning_window;
-  pitch = [pitch yin(song, window_lenght, ((i-1)*step)+ 1, fm, 60, 1000,db)];
+  # busca mediante yin la f0, 60 y 1000 son el min_lag y max_lag de la autocorrelacion
+  # creo que se puede cantar entre 80hz y 1000hz
+
+  [f0, matrix, no_matrix] = yin(song, window_lenght, ((i-1)*step)+ 1, fm, 60, 1000, matrix0, no_matrix0);
+  pitch = [pitch f0];
+  no_matrix0 = no_matrix;
+  matrix0 = matrix;
+  #console
   clc;
 endfor
 
-plot(pitch)
-corrected = [];
-corrected = [corrected tone(pitch(1),inf,inf)];
-corrected = [corrected tone(pitch(2),inf,inf)];
+##plot(pitch);
 
-for i=3:window_number
-  corrected = [corrected tone(pitch(i),corrected(end),corrected(end-1))];
+## Calculo vector de pitch corregidos.
+corrected = [];
+corrected = [corrected pitchCorrection(pitch(1),inf,inf)]; #inicializo 2 valores.
+corrected = [corrected pitchCorrection(pitch(2),inf,inf)];
+
+for i=3:windows_number
+  corrected = [corrected pitchCorrection(pitch(i),corrected(end),corrected(end-1))];
 endfor
 
+##console
 display('Terminado');
 display(['Tiempo transcurrido: ', num2str(toc()), 's']);
 
-##PSOLA ??
+
+##PSOLA ?? no anda
 p1nfm = 0;
 p2nfm = 0;
 new_song = zeros(1,2*song_lenght);
 for(i=1:windows_number-2)
-  display(['window n°: ', num2str(i),'/', num2str(window_number)]);
+  display(['window n°: ', num2str(i),'/', num2str(windows_number)]);
 
   nfm = (corrected(i)*fm)/pitch(i);
 
@@ -57,7 +76,7 @@ for(i=1:windows_number-2)
   p2nfm = p1nfm;
   p1nfm = nfm;
 
-  paso = (i-1)*step*2;
+  paso = (i-1)*step;
   if (pitch(i) == 0)
     for(j=1:window_lenght)
       new_song(1+paso+(2*(j-1))) += windows(j,i);
@@ -69,7 +88,7 @@ for(i=1:windows_number-2)
   endif
 endfor
 
-audiowrite('test.wav',new_song,2*fm);
+audiowrite('test.wav',new_song,fm);
 
 
 

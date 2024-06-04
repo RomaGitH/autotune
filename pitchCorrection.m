@@ -1,8 +1,13 @@
-function y = tone(x, prev1, prev2)
+# Funcion de correcion de frecuencia fundamental.
+# Retorna la nota musical más cercana.
+# Recibe x (el valor a evaluar) y dos valores previos).
+
+function y = pitchCorrection(x, prev1, prev2)
   if (x == 0)
-    y=0;
+    y=0;  # Caso x = 0;
   elseif (abs(x-prev2) > prev1&& prev1*prev2 > 0)
-    y = prev1;
+    y = prev1;  # Intento de corregir phonemas sordos
+    ## no funciona
   else
     piano_notes_freq = [
       % Octave 3
@@ -65,7 +70,9 @@ function y = tone(x, prev1, prev2)
       1046.502 % C10
     ];
 
+    ##Busco la pos de la minima diferencia en valor absoluto.
     [~,pos] = min(abs(piano_notes_freq-x));
+    ## Retorno la f más cercana a f0
     y = piano_notes_freq(pos);
   endif;
-  endfunction
+endfunction
