@@ -3,8 +3,8 @@ tic();
 #### Lectura
 #### Distintos audios en samples/
 ##[song, fm] = audioread("samples/opera-vocals_129bpm_F_minor.wav");
-[song, fm] = audioread("samples/middle-east-girl_120bpm_C_minor.wav");
-##[song, fm] = audioread("samples/grim-reaper.wav");
+##[song, fm] = audioread("samples/middle-east-girl_120bpm_C_minor.wav");
+[song, fm] = audioread("samples/grim-reaper.wav");
 
 song_lenght= length(song);
 t = 0:1/fm: song_lenght - 1/fm;
@@ -14,13 +14,14 @@ t = 0:1/fm: song_lenght - 1/fm;
 
 window_lenght = 1024;
 step = 512;
-windows_number = ceil(((song_lenght - window_lenght)/step)+1);
+windows_number = floor(((song_lenght - window_lenght)/step));
 hanning_window = hanning(1024)';
 windows = zeros(window_lenght,windows_number); #inicializo el vector de m ventanas de n tamaño
 pitch = []; #vector del pitch detectado de cada ventana
 
 windows(:,1) = song(1:window_lenght).*hanning_window;
 pitch = [pitch yin(windows(:,1), window_lenght, fm)];
+## Primero ventaneo y despues?
 for i=2:windows_number
   ##console
   display(['window n°: ', num2str(i),'/', num2str(windows_number)]);
@@ -46,49 +47,103 @@ display('Terminado');
 display(['Tiempo transcurrido: ', num2str(toc()), 's']);
 
 #Plot de el pitch detectado y el corregido.
-figure(2);
+##figure(2);
+##subplot(3,1,1);
+##plot(pitch);
+##subplot(3,1,2);
+##plot(corrected);
+##subplot(3,1,3);
+##plot(pitch);
+##hold on;
+##plot(corrected);
+##hold off;
+
+
+##
+debug = 1;
+new_song = zeros(song_lenght,1);
+i = 1;
+while (i < windows_number)
+
+  old_f0 = pitch(i);
+##  new_f0 = corrected(i);
+  new_f0 = pitch(i)*2;
+
+  shift_factor = new_f0 / old_f0;
+  up_shift = true;
+  no_shift = false;
+
+##  if(debug == i)
+##    display('ok');
+##  else
+##    display(['error :',num2str(i),'!=', num2str(debug)]);
+##    debug = i;
+##  endif
+
+  if(old_f0 == 0 || shift_factor == 1)
+    no_shift = 1;
+  endif
+
+  if (shift_factor > 1)
+    shift_factor =  shift_factor - 1;
+  else
+    shift_factor = 1 - shift_factor;
+    up_shift = false; %Downshift
+  endif
+
+  if(!no_shift)
+
+##          disp('shift');
+    shift_factor = shift_factor * 100;
+    window_a = i;
+    window_b = i;
+    window_pitch = corrected(i);
+
+
+    while corrected(window_b) == window_pitch
+      window_b += 1;
+      if(window_b > windows_number) break endif;
+    endwhile
+    debug = i;
+    pitch_lenght = window_b-window_a;
+    shift_factor = pitch_lenght/shift_factor;
+
+    for(j=1:33333333)
+      k = window_a-1+j;
+
+      if( k > windows_number) break endif;
+      if(j > shift_factor)
+        shift_factor = shift_factor*2;
+        if(up_shift)
+          disp('upshift');
+          new_song((k*step)+1:(k*step)+1024) =  new_song((k*step)+1:(k*step)+1024) + windows(:,k);
+        endif
+        else
+        new_song(((k-1)*step)+1:((k-1)*step)+1024) = new_song(((k-1)*step)+1:((k-1)*step)+1024) + windows(:,k);
+      endif
+    endfor
+    i += pitch_lenght;
+  else
+    new_song(((i-1)*step)+1:((i-1)*step)+1024) = new_song(((i-1)*step)+1:((i-1)*step)+1024) + windows(:,i);
+    debug = i;
+    i +=1;
+  endif
+endwhile
+
+##Plot de el pitch detectado y el corregido.
+figure(1);
 subplot(3,1,1);
-plot(pitch);
+plot(song);
 subplot(3,1,2);
-plot(corrected);
+plot(new_song);
 subplot(3,1,3);
 plot(pitch);
 hold on;
 plot(corrected);
 hold off;
 
-##
-####PSOLA ?? no anda
-##p1nfm = 0;
-##p2nfm = 0;
-##new_song = zeros(1,2*song_lenght);
-##for(i=1:windows_number-2)
-##  display(['window n°: ', num2str(i),'/', num2str(windows_number)]);
-##
-##  nfm = (corrected(i)*fm)/pitch(i);
-##
-##  if(i>2)
-##    if(nfm > p2nfm + p1nfm)
-##      nfm = p1nfm;
-##    endif
-##  endif
-##
-##  p2nfm = p1nfm;
-##  p1nfm = nfm;
-##
-##  paso = (i-1)*step;
-##  if (pitch(i) == 0)
-##    for(j=1:window_lenght)
-##      new_song(1+paso+(2*(j-1))) += windows(j,i);
-##    endfor
-##  else
-##    for(j=1:window_lenght)
-##    new_song(round(1+paso+(2*(j-1)*(1/(nfm/fm))))) += windows(j,i);
-##    endfor
-##  endif
-##endfor
-##
-##audiowrite('test.wav',new_song,fm*2);
+
+audiowrite('test.wav',new_song,fm);
 ##
 ##
 ##
