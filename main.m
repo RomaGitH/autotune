@@ -6,15 +6,15 @@ tic();
 ##[song, fm] = audioread("samples/middle-east-girl_120bpm_C_minor.wav");
 [song, fm] = audioread("samples/grim-reaper.wav");
 
-song_lenght= length(song);
-t = 0:1/fm: song_lenght - 1/fm;
+song_length= length(song);
+t = 0:1/fm: song_length - 1/fm;
 
 #### Pitch detection algorithm
 ## Windows
 
 window_length = 256;
 step = 128;
-windows_number = floor(((song_lenght - window_length)/step));
+windows_number = floor(((song_length - window_length)/step));
 hanning_window = hanning(window_length)';
 windows = zeros(window_length,windows_number); #inicializo el vector de m ventanas de n tamaño
 pitch = []; #vector del pitch detectado de cada ventana
