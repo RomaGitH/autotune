@@ -9,18 +9,7 @@ function f0  = yin(w, fm)
   if(e < 0.05)
       f0 = 0;
   else
-    #Logica de emplear dos ventanas.
-    #no se si mejora.
-##    if(nargin == 4 && e > 1)
-##      e = sum(prev_w.^2);
-##      if e > 0.05
-##        acf_fft_values = acf_fft(w,prev_w);
-##      else
-        acf_fft_values = acf_fft(w);
-##      endif
-##    else
-##      acf_fft_values = acf_fft(w);
-##    endif
+    acf_fft_values = acf_fft(w);
     #busco la pos del max ignorando las primeras 80 samples.
     [~,idx_max] = max(acf_fft_values(80:end));
     sample = idx_max - 1 + 80;  #sumo 80hz para obtener posicion real del sample
