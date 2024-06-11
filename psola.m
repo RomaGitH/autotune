@@ -1,15 +1,16 @@
-function output = psola(win, dpitch, cpitch, fm)
+function output = psola(win, dpitch, cpitch, fm, outter_overlap)
   l = length(win)/2; %2L window
-  output = zeros(1,l); %inicializa la salida de duracion L.
+
+  output = zeros(1,l+outter_overlap); %inicializa la salida de duracion L.
+
+  output_length = length(output);
 
   if (cpitch == 0) %Silencio -> f0 = 0;
-    output = zeros(1,l);
     return;
   endif
   cpp = round((1/cpitch)* fm); %f0' (hz) -> f0' (samples).
 
   if (dpitch < 80) % No se puede cantar a menos de 80 hz...
-      output = zeros(1,l);
     return;
   else
     dpp = round((1/dpitch)* fm); %f0 (hz) -> f0 (samples).
@@ -20,7 +21,7 @@ function output = psola(win, dpitch, cpitch, fm)
   [~, first_peak] = max(win((l/2) +1:(l/2) + 1 +dpp));
 
   % Define posicion inicial.
-  start_pos = (l/2) + first_peak - floor(dpp/2);
+  start_pos = (l/2) + first_peak - floor(dpp/2) - 30;
 
 
   if(start_pos <0)
@@ -30,14 +31,14 @@ function output = psola(win, dpitch, cpitch, fm)
   %Extraccion de grains=========================================================
 
   n = 1; %Numero de periodos en la ventana.
-  while(n < 1024/cpp)
+  while(n < output_length/cpp)
     n += 1;
   endwhile
 
   windows = zeros(n, cpp); %Genera matriz de n ventanas de cpp samples.
   samples = 1; %Lleva cuenta de los samples necesarios para mantener la duracion.
   i = 1;
-  while ((samples < 1025) )
+  while ((samples < output_length+1) )
 
     if(start_pos+(i-1)*dpp+cpp>2048)
       new = windows(i-1,:); %Si se pasa de la ventana, duplica la ultima.
@@ -61,8 +62,8 @@ function output = psola(win, dpitch, cpitch, fm)
     windows(k,:) = windows(k,:) .* h_win;
   endfor
 
-
-  if(cpp>1024)
+##  plot(windows(1,:))
+  if(cpp>output_length)
     output = win(1,:); %Problemas en frecuencias bajas (<100hz).
     else
     output(1:cpp) += windows(1,:); %Suma la primer Ventana.
@@ -71,7 +72,7 @@ function output = psola(win, dpitch, cpitch, fm)
   %Por cada ventana suma y pisa... si overlap>0 -> f0++
   %                                si overlap<0 -> f0--
   for j=2:n
-    if((1+cpp*(j-1)-overlap)> 1024-cpp+1) break; endif;
+    if((1+cpp*(j-1)-overlap)> output_length-cpp+1) break; endif;
 ##    if(overlap>0)
       output(1+cpp*(j-1)-overlap:1+cpp*(j-1)+cpp-overlap-1) += windows(j,:);
 ##    else
