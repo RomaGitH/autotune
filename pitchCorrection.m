@@ -51,15 +51,15 @@ function y = pitchCorrection(x)
       622.254, % D#8/Eb8
       659.255, % E8
       698.456, % F8
-      739.989, % F#8/Gb8
-      783.991, % G8
-      830.609, % G#8/Ab8
+##      739.989, % F#8/Gb8
+##      783.991, % G8
+##      830.609, % G#8/Ab8
       % Octave 10
-      880.0,  % A9
-      932.328, % A#9/Bb9
-      987.767, % B9
+##      880.0,  % A9
+##      932.328, % A#9/Bb9
+##      987.767, % B9
       % Octave 11
-      1046.502 % C10
+##      1046.502 % C10
     ];
 
     ##Busco la pos de la minima diferencia en valor absoluto.

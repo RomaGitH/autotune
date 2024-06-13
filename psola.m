@@ -21,10 +21,11 @@ function output = psola(win, dpitch, cpitch, fm, outter_overlap)
   [~, first_peak] = max(win((l/2) +1:(l/2) + 1 +dpp));
 
   % Define posicion inicial.
-  start_pos = (l/2) + first_peak - floor(dpp/2) - 30;
+  start_pos = (l/2) + first_peak - floor(dpp/2);
 
 
-  if(start_pos <0)
+
+  if(start_pos <=0)
     start_pos = l - l/2; %en caso que falle la deteccion de picos.
   endif
 
@@ -38,12 +39,14 @@ function output = psola(win, dpitch, cpitch, fm, outter_overlap)
   windows = zeros(n, cpp); %Genera matriz de n ventanas de cpp samples.
   samples = 1; %Lleva cuenta de los samples necesarios para mantener la duracion.
   i = 1;
-  while ((samples < output_length+1) )
 
-    if(start_pos+(i-1)*dpp+cpp>2048)
+  while ((samples < output_length+1) )
+    start_idx =start_pos+(i-1)*dpp;
+    end_idx =start_pos+(i-1)*dpp+cpp-1;
+    if(start_idx+cpp>2*l)
       new = windows(i-1,:); %Si se pasa de la ventana, duplica la ultima.
     else
-      new = win(start_pos+(i-1)*dpp:start_pos+(i-1)*dpp+cpp-1);
+      new = win(start_idx:end_idx);
       %extrae cpp muestras cada dpp.
     endif
     windows(i,:) =  new; %Agrega a la matriz.
@@ -62,7 +65,6 @@ function output = psola(win, dpitch, cpitch, fm, outter_overlap)
     windows(k,:) = windows(k,:) .* h_win;
   endfor
 
-##  plot(windows(1,:))
   if(cpp>output_length)
     output = win(1,:); %Problemas en frecuencias bajas (<100hz).
     else
@@ -71,15 +73,30 @@ function output = psola(win, dpitch, cpitch, fm, outter_overlap)
 
   %Por cada ventana suma y pisa... si overlap>0 -> f0++
   %                                si overlap<0 -> f0--
-  for j=2:n
-    if((1+cpp*(j-1)-overlap)> output_length-cpp+1) break; endif;
-##    if(overlap>0)
-      output(1+cpp*(j-1)-overlap:1+cpp*(j-1)+cpp-overlap-1) += windows(j,:);
-##    else
-##      output(1+cpp*(j-1)-overlap:1+cpp*(j-1)+cpp-overlap-1) += windows(j,:);
-##    endif
-  endfor
 
+
+  for j=2:n
+    start_idx =1+cpp*(j-1)-overlap;
+    end_idx =1+cpp*(j-1)+cpp-overlap-1;
+    if((start_idx)> output_length-cpp+1)
+      i = 0;
+      k = 0;
+      while start_idx<output_length
+##        if (k+1>cpp) disp('here');j = j + 1; k = 0; endif;
+##        if (j>n) disp('here2');j = j - 1; k = 0; endif;
+        output(start_idx) = windows(j,(k+1));
+        start_idx = start_idx+i;
+        i = i+1;
+        k = k +1;
+      endwhile
+      break;
+    endif;
+
+      output(start_idx:end_idx) += windows(j,:);
+
+  endfor
+  h_win = hanning(l+outter_overlap)'; %Se suaviza con Hanning windows.
+  output = output .* h_win;
 
 
 endfunction

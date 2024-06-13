@@ -9,39 +9,27 @@ clear;
 ##[song, fm] = audioread("samples/opera-vocals_129bpm_F_minor.wav");
 ####[song, fm] = audioread("samples/middle-east-girl_120bpm_C_minor.wav");
 ##[song, fm] = audioread("samples/grim-reaper.wav");
-##[song, fm] = audioread("samples/our-last-dance.wav");
+[song, fm] = audioread("samples/our-last-dance.wav");
+##song = song(:,2)';
 ##[song, fm] = audioread("samples/old-full.wav");
 ##[song, fm] = audioread("samples/another-verse.wav");
+##[song, fm] = audioread("test.wav");
 ##song = song';
-##
-##
-##pkg load signal;
-##function y_filtered = bandpass_filter(y, fs, lowcut, highcut, order)
-##  [b, a] = butter(order, [lowcut, highcut] / (fs / 2), 'bandpass');
-##  y_filtered = filter(b, a, y);
-##end
-##
-##song = bandpass_filter(song,fm,300,3000,2);
 
 % Grabar =======================================================================
 
-display('Recording...');
-fm = 44100; %Frecuencia de muestreo.
-t = 20; %Tiempo de grabacion.
-song = record(t,fm);
-song = song';
-display('Recording Finish');
-
-
-
-##function y_denoised = noise_gate(y, threshold)
-##  y_denoised = y;
-##  y_denoised(abs(y) < threshold) = 0;
-##end
 ##
-##song = noise_gate(song,0.01);
+##display('Recording...');
+##fm = 44100; %Frecuencia de muestreo.
+##t = 20; %Tiempo de grabacion.
+##song = record(t,fm);
+##song = song';
+##display('Recording Finish');
+##
+##
 
 ## Windows =====================================================================
+
 song_length= length(song);
 window_length = 1024; %Largo Ventana.
 left = song(1:window_length); %Ventana mas vieja.
@@ -53,14 +41,14 @@ dpitchs = []; %pitch detectados.
 cpitchs = []; %pitch corregidos.
 
 %COSAS =========================================================================
-scale = 1.2; %multiplica la frecuencia corregida (mantiene duracion)
+
+scale = 1.33; %multiplica la frecuencia corregida (mantiene duracion)
 filterPB = true; %Aplica el filtro PB.
 reverb = true; %eco
   ##reverb
-  delay_times = [0.5]; % delay del eco.
+  delay_times = [0.1]; % delay del eco.
   gains = [0.2]; % ganancia del eco.
-overlap = window_length*1; %overlap entre outputs.
-bad_singer = false; %mejora un poco no mucho.
+overlap = window_length*0.75; %overlap entre outputs.
 
 % Filtro PB para quitar ruido
  pkg load signal;
@@ -74,10 +62,8 @@ display('Proccessing...');
 
 while((i+1)*window_length<song_length)
 
-
     %Pitch detection and correction.
-    [dpitch, cpitch, window] = pitch(left, center, right, fm, scale, old_pitch, bad_singer);
-
+    [dpitch, cpitch, window] = pitch(left, center, right, fm, scale, old_pitch);
 
     %Guarda los pitches.
     dpitchs = [dpitchs dpitch];
@@ -86,11 +72,6 @@ while((i+1)*window_length<song_length)
     %Aplica psola para generar ventana con pitch corregido.
     output = psola(window, dpitch, cpitch, fm, overlap);
 
-
-##    %Aplica el filtro anti ruido (maso).
-##    if(filterPB)
-##          output = filter(b, a, output);
-##    endif
     %Concatena la salida.
     if(i==3)
        output_vector = [output_vector output];
@@ -138,20 +119,14 @@ display('Writing...');
 display(['Tiempo: ',num2str(toc()), ' s']);
 
 %Escribe la salida==============================================================
-##output_vector = noise_gate(output_vector,0.01);
 
     %Aplica el filtro anti ruido (maso).
     if(filterPB)
           output_vector = filter(b, a, output_vector);
     endif
 
-##[bass,fm2] = audioread('samples/trap-bass-II.wav');
-##bass = bass';
-##bass *= 0.5;
-##output_vector(1:length(bass)) += bass(1,1:length(bass));
-
 %Normaliza (nose porque)========================================================
 output_vector = output_vector/max(abs(output_vector));
 
-audiowrite('nuevo_test_0.wav',output_vector,fm);
+audiowrite('test.wav',output_vector,fm);
 
